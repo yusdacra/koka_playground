@@ -1,4 +1,7 @@
 import log
+import async/utils
+import std/time
+import std/time/timestamp
 
 pub type request-method {
     GET
@@ -27,4 +30,6 @@ pub fun execute(client: httpClient, req: request) {
         GET -> log("GET-ing request", Dbg)
         POST -> log("POST-ing request", Dbg)
     }
+
+    sleep(duration(1)).map(fn(_) { "response" })
 }
