@@ -1,1 +1,1 @@
-3 33 emit cr 1 . 42 . 51 . cr 2312 . 2 . 4 3 < or
+100 100 + : foo 100 ; 100 foo foo foo
