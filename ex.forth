@@ -1,1 +1,1 @@
-100 100 + : foo 100 ; 100 foo foo foo
+: des 83 69 68 emit emit emit cr ; 100 dup dup * + des 1 3 < > 3 =

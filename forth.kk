@@ -1,131 +1,64 @@
 import std/os/file
 import std/os/env
 import std/os/path
-
 fun main() {
     var stack : list<int> := []
     var dict  : list<(string,list<string>)> := []
-    var defining : maybe<(int,string)> := Nothing
-
-    val code = match (get-argv()[1]) {
-        Just(v) -> read-text-file(path(v))
-        Nothing -> ""
-    }
-    var words := code.split(" ").map(trim)
-
-    for (0,words.length) fn(i) {
-        match (words[i]) {
-            Nothing -> ()
-            Just(word) -> {
-                match (defining) {
-                    Just(dw) -> {
-                        val (def-index,def-word) = dw
-                        val fd = fn(tup){val (k,_) = tup; k == def-word}
-                        if (def-index + 1 != i)
-                        then {
-                            if (word == ";")
-                            then defining := Nothing
-                            else dict := (match (dict.find(fd)) {
-                                    Just(tup) -> {
-                                        val (_,v) = tup
-                                        dict.remove(fd).push((def-word,v.push(word)))
-                                    }
-                                    Nothing -> {
-                                        dict.push((def-word,[word]))
-                                    }
-                                })
-                        }
-                    }
-                    Nothing -> {
-                        stack := (match (word) {
-                            "." -> {
-                                val (left,last) = stack.pop
-                                match (last) {
-                                    Just(num) -> print([show(num), " "].join())
-                                    Nothing -> throw("stack underflow")
-                                }
-                                left
-                            }
-                            "emit" -> {
-                                val (left,last) = stack.pop
-                                match (last) {
-                                    Just(num) -> print(num.char)
-                                    Nothing -> throw("stack underflow")
-                                }
-                                left
-                            }
-                            "cr" -> {println(""); stack}
-                            "<" -> do-op(stack,fn(f,s){[if (f < s) then -1 else 0]})
-                            ">" -> do-op(stack,fn(f,s){[if (f > s) then -1 else 0]})
-                            "=" -> do-op(stack,fn(f,s){[if (f == s) then -1 else 0]})
-                            "+" -> do-op(stack,fn(f,s){[f + s]})
-                            "-" -> do-op(stack,fn(f,s){[f - s]})
-                            "*" -> do-op(stack,fn(f,s){[f * s]})
-                            "/" -> do-op(stack,fn(f,s){[f / s]})
-                            "dup" -> do-op(stack,fn(f,s){[s,f,f]})
-                            "drop" -> do-op(stack,fn(_,s){[s]})
-                            "swap" -> do-op(stack,fn(f,s){[f,s]})
-                            "over" -> do-op(stack,fn(f,s){[s,f,s]})
-                            "rot" -> {
-                                if (stack.length >= 3)
-                                then {
-                                    val (rest,v) = stack.split(stack.length - 3)
-                                    rest.append(v.drop(1).append(v.take(1)))
-                                } else throw("stack underflow")
-                            }
-                            ":" -> {
-                                match (words[i + 1]) {
-                                    Just(word-name) -> defining := Just((i,word-name))
-                                    Nothing -> ()
-                                }
-                                stack
-                            }
-                            _ -> {
-                                match (word.parse-int) {
-                                    Just(num) -> stack.push(num)
-                                    Nothing -> {
-                                        dict.find(fn(tup){val (w,_) = tup; w == word})
-                                            .do-just(fn(tup){val (_,new-words) = tup; words := words.append(new-words)})
-                                        stack
-                                    }
-                                }
-                            }
+    var defining : maybe<int> := Nothing
+    val code = read-text-file(path(get-argv()[1].expect("no file provided")))
+    val words = code.split(" ").map(trim)
+    foreach-indexed (words) fn(i,word) {
+        println(show(stack))
+        match (defining) {
+            Just(def-index) -> {
+                val def-word = words[def-index + 1].expect("no def word name")
+                val fd = fn(tup){val (k,_) = tup; k == def-word}
+                if (i != def-index + 1)
+                then if (word == ";")
+                    then defining := Nothing
+                    else dict := (match (dict.find(fd)) {
+                            Just((_,v)) -> dict.remove(fd).push((def-word,v.push(word)))
+                            Nothing -> dict.push((def-word,[word]))
                         })
-                    }
+            }
+            Nothing -> {
+                stack := do-word(stack,word)
+                match (word) {
+                    ":" -> if (defining.is-nothing) then defining := Just(i)
+                    _   -> match (dict.find(fn(tup){val (w,_) = tup; w == word})) {
+                            Just((_,ws)) -> foreach(ws) fn(w){ stack := do-word(stack,w) }
+                            Nothing -> ()
+                        }
                 }
             }
         }
     }
-
-    println("")
-    println(show(stack))
 }
-
-fun do-op(stack : list<int>, op : (int,int) -> list<int>) : _ list<int> {
-    val (rest,v) = stack.split(stack.length - 2)
-    match (v[1]) {
-        Just(first) -> match (v[0]) {
-            Just(second) -> {
-                rest.append(op(first,second))
-            }
-            Nothing -> throw("stack underflow")
-        }
-        Nothing -> throw("stack underflow")
+fun do-word(stack : list<int>, word : string) {
+    match (word) {
+        "." -> {print([stack.last.su.show," "].join); stack.reverse.drop(1).reverse}
+        "emit" -> {print(stack.last.su.char); stack.reverse.drop(1).reverse}
+        "cr" -> {println(""); stack}
+        "<" -> do-op(stack,fn(f,s){[if (f < s) then -1 else 0]})
+        ">" -> do-op(stack,fn(f,s){[if (f > s) then -1 else 0]})
+        "=" -> do-op(stack,fn(f,s){[if (f == s) then -1 else 0]})
+        "+" -> do-op(stack,fn(f,s){[f + s]})
+        "-" -> do-op(stack,fn(f,s){[f - s]})
+        "*" -> do-op(stack,fn(f,s){[f * s]})
+        "/" -> do-op(stack,fn(f,s){[f / s]})
+        "dup" -> stack.push(stack.last.su)
+        "drop" -> stack.reverse.drop(1).reverse
+        "swap" -> do-op(stack,fn(f,s){[f,s]})
+        "over" -> do-op(stack,fn(f,s){[s,f,s]})
+        "rot" -> if (stack.length >= 3) then {
+                    val (rest,v) = stack.split(stack.length - 3)
+                    rest.append(v.drop(1).append(v.take(1)))
+                } else throw("stack underflow")
+        _ -> match(word.parse-int){Just(num) -> stack.push(num);Nothing -> stack}
     }
 }
-
-fun push(l : list<a>, v : a) : _ list<a> {
-    l.append([v])
-}
-
-fun pop(l : list<a>) : _ (list<a>, maybe<a>) {
-    val (rest, last) = l.split(l.length - 1)
-    (rest, last.head)
-}
-
-fun do-just(v : maybe<a>, f : (a) -> e ()) : e () {
-    match (v) {
-        Just(value) -> f(value)
-        Nothing -> ()
-    }
-}
+fun do-op(stack:list<int>,op:(int,int) -> list<int>){val (rest,v)=stack.split(stack.length - 2);rest.append(op(v[1].su, v[0].su))}
+fun push(l:list<a>,v:a): _ list<a>{ l.append([v]) }
+fun pop-do(l:list<a>,f:(a) -> <exn|e> ()): <exn|e> list<a>{val (rest, last)=l.split(l.length - 1);f(last.head.su);rest}
+fun expect(v:maybe<a>,msg:string): _ a{match(v){Just(vv) -> vv;Nothing -> throw(msg)}}
+fun su(v:maybe<a>): _ a{v.expect("stack underflow")}
