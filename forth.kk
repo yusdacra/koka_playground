@@ -1,12 +1,9 @@
 import std/os/file;import std/os/env;import std/os/path
 fun main() {
-    var stack : list<int> := []
-    var dict  : list<(string,list<string>)> := []
-    var defining : maybe<int> := Nothing
+    var stack:=[];var dict:=[];var defining:=Nothing
     val code = read-text-file(path(get-argv()[1].expect("no file provided")))
     val words = code.split(" ").map(trim)
     foreach-indexed (words) fn(i,word) {
-        println(show(stack))
         match (defining) {
             Just(def-index) -> {
                 val def-word = words[def-index + 1].expect("no def word name")
