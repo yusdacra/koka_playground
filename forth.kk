@@ -1,6 +1,4 @@
-import std/os/file
-import std/os/env
-import std/os/path
+import std/os/file;import std/os/env;import std/os/path
 fun main() {
     var stack : list<int> := []
     var dict  : list<(string,list<string>)> := []
