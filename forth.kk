@@ -45,10 +45,7 @@ fun do-word(stack : list<int>, word : string) {
         "drop" -> stack.reverse.drop(1).reverse
         "swap" -> do-op(stack,fn(f,s){[f,s]})
         "over" -> do-op(stack,fn(f,s){[s,f,s]})
-        "rot" -> if (stack.length >= 3) then {
-                    val (rest,v) = stack.split(stack.length - 3)
-                    rest.append(v.drop(1).append(v.take(1)))
-                } else throw("stack underflow")
+        "rot" -> {val (rest,v)=stack.split(stack.length - 3);rest.append(v.drop(1).append(v.take(1)))}
         _ -> match(word.parse-int){Just(num) -> stack.push(num);Nothing -> stack}
     }
 }

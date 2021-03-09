@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs;
 mkShell {
-    nativeBuildInputs = [ cmake ];
+    nativeBuildInputs = [ cmake rustc cargo rustfmt ];
 }

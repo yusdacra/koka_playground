@@ -1,1 +1,1 @@
-: des 83 69 68 emit emit emit cr ; 100 dup dup * + des 1 3 < > 3 =
+: des 83 69 68 emit emit emit cr ; 100 dup dup * + des 1 3 < > 3 = .
